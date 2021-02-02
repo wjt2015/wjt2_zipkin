@@ -32,44 +32,54 @@ public final class ScribeCollector extends CollectorComponent {
     return new Builder();
   }
 
-  /** Configuration including defaults needed to receive spans from a Scribe category. */
+  /**
+   * Configuration including defaults needed to receive spans from a Scribe category.
+   */
   public static final class Builder extends CollectorComponent.Builder {
     Collector.Builder delegate = Collector.newBuilder(ScribeCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
     String category = "zipkin";
     int port = 9410;
 
-    @Override public Builder storage(StorageComponent storage) {
+    @Override
+    public Builder storage(StorageComponent storage) {
       delegate.storage(storage);
       return this;
     }
 
-    @Override public Builder metrics(CollectorMetrics metrics) {
+    @Override
+    public Builder metrics(CollectorMetrics metrics) {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics.forTransport("scribe");
       delegate.metrics(this.metrics);
       return this;
     }
 
-    @Override public Builder sampler(CollectorSampler sampler) {
+    @Override
+    public Builder sampler(CollectorSampler sampler) {
       delegate.sampler(sampler);
       return this;
     }
 
-    /** Category zipkin spans will be consumed from. Defaults to "zipkin" */
+    /**
+     * Category zipkin spans will be consumed from. Defaults to "zipkin"
+     */
     public Builder category(String category) {
       if (category == null) throw new NullPointerException("category == null");
       this.category = category;
       return this;
     }
 
-    /** The port to listen on. Defaults to 9410 */
+    /**
+     * The port to listen on. Defaults to 9410
+     */
     public Builder port(int port) {
       this.port = port;
       return this;
     }
 
-    @Override public ScribeCollector build() {
+    @Override
+    public ScribeCollector build() {
       return new ScribeCollector(this);
     }
   }
@@ -81,24 +91,30 @@ public final class ScribeCollector extends CollectorComponent {
       builder.delegate.build(), builder.metrics, builder.category));
   }
 
-  /** Will throw an exception if the {@link Builder#port(int) port} is already in use. */
-  @Override public ScribeCollector start() {
+  /**
+   * Will throw an exception if the {@link Builder#port(int) port} is already in use.
+   */
+  @Override
+  public ScribeCollector start() {
     server.start();
     return this;
   }
 
-  @Override public CheckResult check() {
+  @Override
+  public CheckResult check() {
     if (!server.isRunning()) {
       return CheckResult.failed(new IllegalStateException("server not running"));
     }
     return CheckResult.OK;
   }
 
-  @Override public final String toString() {
+  @Override
+  public final String toString() {
     return "ScribeCollector{port=" + server.port + ", category=" + server.scribe.category + "}";
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     server.close();
   }
 }

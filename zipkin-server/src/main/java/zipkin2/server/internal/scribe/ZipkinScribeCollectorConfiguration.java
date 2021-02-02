@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal.scribe;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -27,10 +28,13 @@ import zipkin2.storage.StorageComponent;
  * a single span, which is TBinaryProtocol big-endian, then base64 encoded. Decoded spans are stored
  * asynchronously.
  */
+@Slf4j
 @ConditionalOnClass(ScribeCollector.class)
 @ConditionalOnProperty(value = "zipkin.collector.scribe.enabled", havingValue = "true")
 public class ZipkinScribeCollectorConfiguration {
-  /** The init method will block until the scribe port is listening, or crash on port conflict */
+  /**
+   * The init method will block until the scribe port is listening, or crash on port conflict
+   */
   @Bean(initMethod = "start")
   ScribeCollector scribe(
     @Value("${zipkin.collector.scribe.category:zipkin}") String category,
@@ -38,12 +42,14 @@ public class ZipkinScribeCollectorConfiguration {
     CollectorSampler sampler,
     CollectorMetrics metrics,
     StorageComponent storage) {
-    return ScribeCollector.newBuilder()
+    ScribeCollector scribeCollector = ScribeCollector.newBuilder()
       .category(category)
       .port(port)
       .sampler(sampler)
       .metrics(metrics)
       .storage(storage)
       .build();
+    log.info("scribeCollector={};category={};port={};sampler={};metrics={};storage={};", scribeCollector, category, port, sampler, metrics, storage);
+    return scribeCollector;
   }
 }
