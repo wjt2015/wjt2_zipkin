@@ -1,6 +1,6 @@
 
-代码复制于https://github.com/openzipkin/zipkin
-便于学习zipkin源码;
+代码复制于https://github.com/openzipkin/zipkin    
+学习zipkin源码;
 
 
 
