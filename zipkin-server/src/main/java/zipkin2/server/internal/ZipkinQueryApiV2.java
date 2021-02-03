@@ -29,6 +29,7 @@ import com.linecorp.armeria.server.annotation.Param;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufOutputStream;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -37,6 +38,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import zipkin2.Call;
@@ -52,6 +55,7 @@ import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
 import static com.linecorp.armeria.common.HttpStatus.NOT_FOUND;
 import static com.linecorp.armeria.common.MediaType.ANY_TEXT_TYPE;
 
+@Slf4j
 @ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
 @ExceptionHandler(BodyIsExceptionMessage.class)
 public class ZipkinQueryApiV2 {
@@ -145,6 +149,9 @@ public class ZipkinQueryApiV2 {
         .build();
 
     List<List<Span>> traces = storage.spanStore().getTraces(queryRequest).execute();
+
+    log.info("serviceName={};remoteServiceName={};spanName={};traces={};", serviceName, remoteServiceName, spanName, spanName, traces);
+
     return jsonResponse(writeTraces(SpanBytesEncoder.JSON_V2, traces));
   }
 
@@ -154,6 +161,9 @@ public class ZipkinQueryApiV2 {
     traceId = traceId != null ? traceId.trim() : null;
     traceId = Span.normalizeTraceId(traceId);
     List<Span> trace = storage.traces().getTrace(traceId).execute();
+
+    log.info("traceId={};trace={};", traceId, trace);
+
     if (trace.isEmpty()) {
       return AggregatedHttpResponse.of(NOT_FOUND, ANY_TEXT_TYPE, traceId + " not found");
     }
