@@ -21,10 +21,13 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import lombok.extern.slf4j.Slf4j;
+
 import java.net.InetSocketAddress;
 
 import static zipkin2.Call.propagateIfFatal;
 
+@Slf4j
 final class NettyScribeServer {
   final int port;
   final ScribeSpanConsumer scribe;
@@ -46,7 +49,8 @@ final class NettyScribeServer {
       channel = b.group(bossGroup, workerGroup)
         .channel(EventLoopGroups.serverChannelType(bossGroup))
         .childHandler(new ChannelInitializer<SocketChannel>() {
-          @Override protected void initChannel(SocketChannel ch) {
+          @Override
+          protected void initChannel(SocketChannel ch) {
             ch.pipeline()
               .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4))
               .addLast(new ScribeInboundHandler(scribe));
@@ -55,6 +59,7 @@ final class NettyScribeServer {
         .bind(port)
         .syncUninterruptibly()
         .channel();
+      log.info("NettyScribeServer start!port={};scribe={};", this.port, this.scribe);
     } catch (Throwable t) {
       propagateIfFatal(t);
       throw new RuntimeException("Could not start scribe server.", t);

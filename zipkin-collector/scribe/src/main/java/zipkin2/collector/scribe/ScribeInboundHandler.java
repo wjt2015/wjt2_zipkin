@@ -31,8 +31,11 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.EventLoop;
+
 import java.util.HashMap;
 import java.util.Map;
+
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +44,7 @@ import static zipkin2.Call.propagateIfFatal;
 @SuppressWarnings("FutureReturnValueIgnored")
 // TODO: errorprone wants us to check futures before returning, but what would be a sensible check?
 // Say it is somehow canceled, would we take action? Would callback.onError() be redundant?
+@Slf4j
 final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
 
   static final Logger logger = LoggerFactory.getLogger(ScribeInboundHandler.class);
@@ -63,7 +67,8 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
   int nextResponseIndex = 0;
   int previouslySentResponseIndex = -1;
 
-  @Override public void channelRead(ChannelHandlerContext ctx, Object payload) {
+  @Override
+  public void channelRead(ChannelHandlerContext ctx, Object payload) {
     assert payload instanceof ByteBuf;
     HttpRequest request = HttpRequest.of(THRIFT_HEADERS, HttpData.wrap((ByteBuf) payload));
     ServiceRequestContextBuilder requestContextBuilder = ServiceRequestContext.builder(request)
@@ -76,13 +81,15 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
 
     ServiceRequestContext requestContext = requestContextBuilder.build();
 
-    final HttpResponse response;
+    HttpResponse response = null;
     try (SafeCloseable unused = requestContext.push()) {
       response = HttpResponse.of(scribeService.serve(requestContext, request));
     } catch (Throwable t) {
       propagateIfFatal(t);
       exceptionCaught(ctx, t);
       return;
+    } finally {
+      log.info("ScribeInboundHandler_channelRead!scribeService={};request={};response={};", scribeService, request, response);
     }
 
     int responseIndex = nextResponseIndex++;
@@ -111,11 +118,13 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
     });
   }
 
-  @Override public void channelInactive(ChannelHandlerContext ctx) {
+  @Override
+  public void channelInactive(ChannelHandlerContext ctx) {
     release();
   }
 
-  @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     Exceptions.logIfUnexpected(logger, ctx.channel(), cause);
 
     release();
