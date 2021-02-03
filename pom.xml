@@ -51,8 +51,8 @@
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
     <armeria.version>1.0.0</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
-   <!-- <netty.version>4.1.51.Final</netty.version>-->
-    <netty.version>4.1.20.Final</netty.version>
+    <netty.version>4.1.51.Final</netty.version>
+    <!--<netty.version>4.1.20.Final</netty.version>-->
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
     <jackson.version>2.11.2</jackson.version>
