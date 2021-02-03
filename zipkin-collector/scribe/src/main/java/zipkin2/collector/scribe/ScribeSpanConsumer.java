@@ -14,10 +14,13 @@
 package zipkin2.collector.scribe;
 
 import com.linecorp.armeria.common.CommonPools;
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.async.AsyncMethodCallback;
 import zipkin2.Callback;
 import zipkin2.Span;
@@ -28,6 +31,7 @@ import zipkin2.collector.scribe.generated.LogEntry;
 import zipkin2.collector.scribe.generated.ResultCode;
 import zipkin2.collector.scribe.generated.Scribe;
 
+@Slf4j
 final class ScribeSpanConsumer implements Scribe.AsyncIface {
   final Collector collector;
   final CollectorMetrics metrics;
@@ -37,6 +41,7 @@ final class ScribeSpanConsumer implements Scribe.AsyncIface {
     this.collector = collector;
     this.metrics = metrics;
     this.category = category;
+    log.info("this.collector={};this.metrics={};this.category={};", this.collector, this.metrics, this.category);
   }
 
   @Override
@@ -58,18 +63,21 @@ final class ScribeSpanConsumer implements Scribe.AsyncIface {
       return;
     } finally {
       metrics.incrementBytes(byteCount);
+      log.info("Log;spans={};", spans);
     }
 
     collector.accept(spans, new Callback<Void>() {
-      @Override public void onSuccess(Void value) {
+      @Override
+      public void onSuccess(Void value) {
         resultHandler.onComplete(ResultCode.OK);
       }
 
-      @Override public void onError(Throwable t) {
+      @Override
+      public void onError(Throwable t) {
         Exception error = t instanceof Exception ? (Exception) t : new RuntimeException(t);
         resultHandler.onError(error);
       }
-    // Collectors may not be asynchronous so switch to blocking executor here.
+      // Collectors may not be asynchronous so switch to blocking executor here.
     }, CommonPools.blockingTaskExecutor());
   }
 }
