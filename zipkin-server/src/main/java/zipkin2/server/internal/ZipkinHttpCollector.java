@@ -33,6 +33,8 @@ import java.lang.annotation.Target;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -48,6 +50,7 @@ import zipkin2.storage.StorageComponent;
 
 import static zipkin2.Call.propagateIfFatal;
 
+@Slf4j
 @ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
 @ExceptionHandler(BodyIsExceptionMessage.class)
 public class ZipkinHttpCollector {
