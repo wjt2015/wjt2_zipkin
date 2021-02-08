@@ -26,6 +26,7 @@ import com.linecorp.armeria.server.annotation.Consumes;
 import com.linecorp.armeria.server.annotation.ConsumesJson;
 import com.linecorp.armeria.server.annotation.ExceptionHandler;
 import com.linecorp.armeria.server.annotation.Post;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -69,13 +70,17 @@ public class ZipkinHttpCollector {
 
   @Post("/api/v2/spans")
   public HttpResponse uploadSpans(ServiceRequestContext ctx, HttpRequest req) {
-    return validateAndStoreSpans(SpanBytesDecoder.JSON_V2, ctx, req);
+    HttpResponse httpResponse = validateAndStoreSpans(SpanBytesDecoder.JSON_V2, ctx, req);
+    log.info("uploadSpans;ctx={};req={};httpResponse={};", ctx, req, httpResponse);
+    return httpResponse;
   }
 
   @Post("/api/v2/spans")
   @ConsumesJson
   public HttpResponse uploadSpansJson(ServiceRequestContext ctx, HttpRequest req) {
-    return validateAndStoreSpans(SpanBytesDecoder.JSON_V2, ctx, req);
+    HttpResponse httpResponse = validateAndStoreSpans(SpanBytesDecoder.JSON_V2, ctx, req);
+    log.info("uploadSpans;ctx={};req={};httpResponse={};", ctx, req, httpResponse);
+    return httpResponse;
   }
 
   @Post("/api/v2/spans")
@@ -101,12 +106,14 @@ public class ZipkinHttpCollector {
     return validateAndStoreSpans(SpanBytesDecoder.THRIFT, ctx, req);
   }
 
-  /** This synchronously decodes the message so that users can see data errors. */
+  /**
+   * This synchronously decodes the message so that users can see data errors.
+   */
   @SuppressWarnings("FutureReturnValueIgnored")
   // TODO: errorprone wants us to check this future before returning, but what would be a sensible
   // check? Say it is somehow canceled, would we take action? Would callback.onError() be redundant?
   HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, ServiceRequestContext ctx,
-    HttpRequest req) {
+                                     HttpRequest req) {
     CompletableCallback result = new CompletableCallback();
 
     req.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()).handle((msg, t) -> {
@@ -213,12 +220,14 @@ public class ZipkinHttpCollector {
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Consumes("application/x-thrift") @interface ConsumesThrift {
+@Consumes("application/x-thrift")
+@interface ConsumesThrift {
 }
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Consumes("application/x-protobuf") @interface ConsumesProtobuf {
+@Consumes("application/x-protobuf")
+@interface ConsumesProtobuf {
 }
 
 final class CompletableCallback extends CompletableFuture<HttpResponse>
@@ -226,11 +235,13 @@ final class CompletableCallback extends CompletableFuture<HttpResponse>
 
   static final ResponseHeaders ACCEPTED_RESPONSE = ResponseHeaders.of(HttpStatus.ACCEPTED);
 
-  @Override public void onSuccess(Void value) {
+  @Override
+  public void onSuccess(Void value) {
     complete(HttpResponse.of(ACCEPTED_RESPONSE));
   }
 
-  @Override public void onError(Throwable t) {
+  @Override
+  public void onError(Throwable t) {
     completeExceptionally(t);
   }
 }
