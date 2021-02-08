@@ -19,6 +19,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
+
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Callback;
@@ -40,16 +42,21 @@ import static zipkin2.Call.propagateIfFatal;
  * before storage is attempted. This ensures that calling threads are disconnected from storage
  * threads.
  */
+@Slf4j
 public class Collector { // not final for mock
   static final Callback<Void> NOOP_CALLBACK = new Callback<Void>() {
-    @Override public void onSuccess(Void value) {
+    @Override
+    public void onSuccess(Void value) {
     }
 
-    @Override public void onError(Throwable t) {
+    @Override
+    public void onError(Throwable t) {
     }
   };
 
-  /** Needed to scope this to the correct logging category */
+  /**
+   * Needed to scope this to the correct logging category
+   */
   public static Builder newBuilder(Class<?> loggingClass) {
     if (loggingClass == null) throw new NullPointerException("loggingClass == null");
     return new Builder(LoggerFactory.getLogger(loggingClass.getName()));
@@ -65,21 +72,27 @@ public class Collector { // not final for mock
       this.logger = logger;
     }
 
-    /** Sets {@link {@link CollectorComponent.Builder#storage(StorageComponent)}} */
+    /**
+     * Sets {@link {@link CollectorComponent.Builder#storage(StorageComponent)}}
+     */
     public Builder storage(StorageComponent storage) {
       if (storage == null) throw new NullPointerException("storage == null");
       this.storage = storage;
       return this;
     }
 
-    /** Sets {@link {@link CollectorComponent.Builder#metrics(CollectorMetrics)}} */
+    /**
+     * Sets {@link {@link CollectorComponent.Builder#metrics(CollectorMetrics)}}
+     */
     public Builder metrics(CollectorMetrics metrics) {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics;
       return this;
     }
 
-    /** Sets {@link {@link CollectorComponent.Builder#sampler(CollectorSampler)}} */
+    /**
+     * Sets {@link {@link CollectorComponent.Builder#sampler(CollectorSampler)}}
+     */
     public Builder sampler(CollectorSampler sampler) {
       if (sampler == null) throw new NullPointerException("sampler == null");
       this.sampler = sampler;
@@ -120,6 +133,9 @@ public class Collector { // not final for mock
       callback.onSuccess(null);
       return;
     }
+
+    log.info("callback={};metrics={};spans={};", callback, metrics, spans);
+
     metrics.incrementSpans(spans.size());
 
     List<Span> sampledSpans = sample(spans);
@@ -141,9 +157,11 @@ public class Collector { // not final for mock
     }
   }
 
-  /** Like {@link #acceptSpans(byte[], BytesDecoder, Callback)}, except using a byte buffer. */
+  /**
+   * Like {@link #acceptSpans(byte[], BytesDecoder, Callback)}, except using a byte buffer.
+   */
   public void acceptSpans(ByteBuffer encoded, SpanBytesDecoder decoder, Callback<Void> callback,
-    Executor executor) {
+                          Executor executor) {
     List<Span> spans;
     try {
       spans = decoder.decodeList(encoded);
@@ -225,7 +243,8 @@ public class Collector { // not final for mock
       this.spans = spans;
     }
 
-    @Override public void run() {
+    @Override
+    public void run() {
       try {
         store(spans, this);
       } catch (RuntimeException | Error e) {
@@ -236,14 +255,17 @@ public class Collector { // not final for mock
       }
     }
 
-    @Override public void onSuccess(Void value) {
+    @Override
+    public void onSuccess(Void value) {
     }
 
-    @Override public void onError(Throwable t) {
+    @Override
+    public void onError(Throwable t) {
       handleStorageError(spans, t, NOOP_CALLBACK);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return appendSpanIds(spans, new StringBuilder("StoreSpans(")) + ")";
     }
   }
