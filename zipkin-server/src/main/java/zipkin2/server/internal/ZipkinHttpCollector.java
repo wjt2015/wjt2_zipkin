@@ -71,7 +71,7 @@ public class ZipkinHttpCollector {
   @Post("/api/v2/spans")
   public HttpResponse uploadSpans(ServiceRequestContext ctx, HttpRequest req) {
     HttpResponse httpResponse = validateAndStoreSpans(SpanBytesDecoder.JSON_V2, ctx, req);
-    log.info("uploadSpans;ctx={};req={};httpResponse={};", ctx, req, httpResponse);
+    log.info("uploadSpans;A;ctx={};req={};httpResponse={};", ctx, req, httpResponse);
     return httpResponse;
   }
 
@@ -79,7 +79,7 @@ public class ZipkinHttpCollector {
   @ConsumesJson
   public HttpResponse uploadSpansJson(ServiceRequestContext ctx, HttpRequest req) {
     HttpResponse httpResponse = validateAndStoreSpans(SpanBytesDecoder.JSON_V2, ctx, req);
-    log.info("uploadSpans;ctx={};req={};httpResponse={};", ctx, req, httpResponse);
+    log.info("uploadSpans;B;ctx={};req={};httpResponse={};", ctx, req, httpResponse);
     return httpResponse;
   }
 
@@ -161,6 +161,7 @@ public class ZipkinHttpCollector {
         // callback is context aware to continue the trace.
         Executor executor = ctx.makeContextAware(ctx.blockingTaskExecutor());
         try {
+          log.info("collector={};decoder={};result={};", collector, decoder, result);
           collector.acceptSpans(nioBuffer, decoder, result, executor);
         } catch (Throwable t1) {
           result.onError(t1);
